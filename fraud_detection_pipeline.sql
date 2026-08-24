@@ -22,7 +22,9 @@ INSERT INTO transactions (account_id, merchant_name, amount, txn_timestamp) VALU
 (5504, 'Test Auth', 0.50, '2026-08-22 21:10:00'),
 (5504, 'Apple Store', 1200.00, '2026-08-22 21:25:00');
 
-WITH txn AS (SELECT *,COUNT(txn_id) OVER(PARTITION BY account_id ORDER BY txn_timestamp RANGE BETWEEN INTERVAL 2 HOUR PRECEDING AND CURRENT ROW) AS Recent_Txn_Count,SUM(amount) OVER(PARTITION BY account_id ORDER BY txn_timestamp RANGE BETWEEN INTERVAL 2 HOUR PRECEDING AND CURRENT ROW) AS Recent_Total_Spent,avg(amount) OVER(PARTITION BY account_id ORDER BY txn_timestamp RANGE BETWEEN interval 2 HOUR PRECEDING AND current ROW) AS avg_spent 
+WITH txn AS (SELECT *,COUNT(txn_id) OVER(PARTITION BY account_id ORDER BY txn_timestamp RANGE BETWEEN INTERVAL 2 HOUR PRECEDING AND CURRENT ROW) AS Recent_Txn_Count,
+    SUM(amount) OVER(PARTITION BY account_id ORDER BY txn_timestamp RANGE BETWEEN INTERVAL 2 HOUR PRECEDING AND CURRENT ROW) AS Recent_Total_Spent,
+    avg(amount) OVER(PARTITION BY account_id ORDER BY txn_timestamp RANGE BETWEEN interval 2 HOUR PRECEDING AND current ROW) AS avg_spent 
  FROM transactions)
  
  SELECT *,  
