@@ -14,19 +14,42 @@ I engineered a dynamic SQL pipeline that acts as a real-time detection engine. I
 *   **Advanced Aggregation (`SUM`, `COUNT`, `AVG` OVER):** To calculate the recent transaction frequency and compare current spend against the rolling average.
 *   **Automated Flagging (`CASE WHEN`):** To instantly label a transaction as "Suspected Fraud" if it breaches both the frequency (count > 3) and spending threshold (amount > avg).
 
-## 📊 The Output (Actionable Insights)
+## 💻 The SQL Code
+```sql
+WITH txn AS (
+    SELECT *,
+    COUNT(txn_id) OVER(PARTITION BY account_id ORDER BY txn_timestamp RANGE BETWEEN INTERVAL 2 HOUR PRECEDING AND CURRENT ROW) AS Recent_Txn_Count,
+    SUM(amount) OVER(PARTITION BY account_id ORDER BY txn_timestamp RANGE BETWEEN INTERVAL 2 HOUR PRECEDING AND CURRENT ROW) AS Recent_Total_Spent,
+    AVG(amount) OVER(PARTITION BY account_id ORDER BY txn_timestamp RANGE BETWEEN INTERVAL 2 HOUR PRECEDING AND CURRENT ROW) AS avg_spent
+    FROM transactions
+)
+SELECT *,  
+    CASE  
+        WHEN t.Recent_Txn_Count > 3 AND t.Recent_Total_Spent > t.avg_spent THEN "Suspected Fraud"
+        ELSE "Normal"
+    END AS LABEL
+FROM txn t;
+```
+**📊 The Output (Actionable Insights)**
 
 The query successfully simulated a real-time risk engine. Here is a snapshot of the detection results:
 
-### 🚨 Suspicious Activity Flagged
-* **Transaction ID: 6 | Merchant: Rolex Store**
-  * **Amount Attempted:** $4500.00
-  * **Recent 2-Hour Velocity:** 4 transactions made totaling $4504.50
-  * **Average Spend:** $1126.12
-  * **System Decision:** **Suspected Fraud** (Action: Block Transaction / Require OTP)
+🚨 Suspicious Activity Flagged
+Transaction ID: 6 | Merchant: Rolex Store
 
-### 🟢 Normal Activity Authorized
-* **Transaction ID: 11 | Merchant: Apple Store**
-  * **Amount Attempted:** $1200.00
-  * **Recent 2-Hour Velocity:** 3 transactions made (below risk threshold of >3)
-  * **System Decision:** Normal (Action: Processed Successfully)
+Amount Attempted: $4500.00
+
+Recent 2-Hour Velocity: 4 transactions made totaling $4504.50
+
+Average Spend: $1126.12
+
+System Decision: Suspected Fraud (Action: Block Transaction / Require OTP)
+
+🟢 Normal Activity Authorized
+Transaction ID: 11 | Merchant: Apple Store
+
+Amount Attempted: $1200.00
+
+Recent 2-Hour Velocity: 3 transactions made (below risk threshold of >3)
+
+System Decision: Normal (Action: Processed Successfully)
